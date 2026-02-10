@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Network Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .app-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 180px);
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #networkCanvas {
+            width: 100%;
+            height: 100%;
+            background: #f9f9f9;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+        
+        .tool-section {
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        
+        .tool-section:last-child {
+            border-bottom: none;
+        }
+        
+        .tool-section h3 {
+            margin-bottom: 15px;
+            color: #5a67d8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tool-section h3 i {
+            font-size: 1.2rem;
+        }
+        
+        .tool-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .tool-btn {
+            padding: 10px 15px;
+            background: #edf2f7;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .tool-btn:hover {
+            background: #e2e8f0;
+        }
+        
+        .tool-btn.active {
+            background: #5a67d8;
+            color: white;
+        }
+        
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.selected {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .animation-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .control-btn {
+            flex: 1;
+            padding: 10px;
+            background: #5a67d8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover {
+            background: #4c51bf;
+        }
+        
+        .control-btn.stop {
+            background: #e53e3e;
+        }
+        
+        .control-btn.stop:hover {
+            background: #c53030;
+        }
+        
+        .node-counter {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .prebuilt-templates {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .template-btn {
+            padding: 12px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .template-btn:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .export-btn {
+            flex: 1;
+            padding: 12px;
+            background: #38a169;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .export-btn:hover {
+            background: #2f855a;
+        }
+        
+        .export-btn.json {
+            background: #d69e2e;
+        }
+        
+        .export-btn.json:hover {
+            background: #b7791f;
+        }
+        
+        @media (max-width: 1024px) {
+            .app-container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+            
+            .canvas-container {
+                height: 600px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Animation Network Designer</h1>
+            <p>Create animated network diagrams and flowcharts with ease</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="sidebar">
+                <div class="tool-section">
+                    <h3><i class="fas fa-mouse-pointer"></i> Tools</h3>
+                    <div class="tool-group">
+                        <button class="tool-btn active" data-tool="select">
+                            <i class="fas fa-mouse-pointer"></i> Select
+                        </button>
+                        <button class="tool-btn" data-tool="node">
+                            <i class="fas fa-circle"></i> Node
+                        </button>
+                        <button class="tool-btn" data-tool="edge">
+                            <i class="fas fa-link"></i> Edge
+                        </button>
+                        <button class="tool-btn" data-tool="text">
+                            <i class="fas fa-font"></i> Text
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tool-section">
+                    <h3><i class="fas fa-palette"></i> Colors</h3>
+                    <div class="color-picker">
+                        <div class="color-option selected" style="background-color: #5a67d8;" data-color="#5a67d8"></div>
+                        <div class="color-option" style="background-color: #38a169;" data-color="#38a169"></div>
+                        <div class="color-option" style="background-color: #e53e3e;" data-color="#e53e3e"></div>
+                        <div class="color-option" style="background-color: #d69e2e;" data-color="#d69e2e"></div>
+                        <div class="color-option" style="background-color: #805ad5;" data-color="#805ad5"></div>
+                        <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-section">
+                    <h3><i class="fas fa-sliders-h"></i> Settings</h3>
+                    <div>
+                        <label>Node Size: <span id="nodeSizeValue">30</span>px</label>
+                        <input type="range" id="nodeSize" min="10" max="60" value="30">
+                    </div>
+                    <div>
+                        <label>Edge Width: <span id="edgeWidthValue">3</span>px</label>
+                        <input type="range" id="edgeWidth" min="1" max="10" value="3">
+                    </div>
+                    <div>
+                        <label>Animation Speed: <span id="speedValue">1.0</span>x</label>
+                        <input type="range" id="animationSpeed" min="0.1" max="3" step="0.1" value="1.0">
+                    </div>
+                </div>
+                
+                <div class="tool-section">
+                    <h3><i class="fas fa-play-circle"></i> Animation</h3>
+                    <div class="animation-controls">
+                        <button class="control-btn" id="playAnimation">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                        <button class="control-btn stop" id="stopAnimation">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        <button class="control-btn" id="resetAnimation">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tool-section">
+                    <h3><i class="fas fa-layer-group"></i> Templates</h3>
+                    <div class="prebuilt-templates">
+                        <button class="template-btn" data-template="star">Star Network</button>
+                        <button class="template-btn" data-template="mesh">Mesh Network</button>
+                        <button class="template-btn" data-template="hierarchy">Hierarchy</button>
+                        <button class="template-btn" data-template="flowchart">Flowchart</button>
+                    </div>
+                </div>
+                
+                <div class="tool-section">
+                    <h3><i class="fas fa-file-export"></i> Export</h3>
+                    <div class="export-options">
+                        <button class="export-btn" id="exportPNG">
+                            <i class="fas fa-image"></i> PNG
+                        </button>
+                        <button class="export-btn json" id="exportJSON">
+                            <i class="fas fa-code"></i> JSON
+                        </button>
+                        <button class="export-btn" id="clearCanvas">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <div class="node-counter">
+                    <i class="fas fa-project-diagram"></i> Nodes: <span id="nodeCount">0</span> | 
+                    <i class="fas fa-link"></i> Edges: <span id="edgeCount">0</span>
+                </div>
+                <canvas id="networkCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas dimensions
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            draw();
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // App state
+        let state = {
+            tool: 'select',
+            color: '#5a67d8',
+            nodeSize: 30,
+            edgeWidth: 3,
+            animationSpeed: 1.0,
+            nodes: [],
+            edges: [],
+            selectedNode: null,
+            dragging: false,
+            animationId: null,
+            animationTime: 0,
+            nextNodeId: 1,
+            nextEdgeId: 1
+        };
+        
+        // Initialize with some sample nodes
+        state.nodes = [
+            { id: 1, x: canvas.width * 0.3, y: canvas.height * 0.4, label: "Node 1", color: "#5a67d8", size: 30 },
+            { id: 2, x: canvas.width * 0.7, y: canvas.height * 0.4, label: "Node 2", color: "#38a169", size: 30 },
+            { id: 3, x: canvas.width * 0.5, y: canvas.height * 0.7, label: "Node 3", color: "#e53e3e", size: 30 }
+        ];
+        
+        state.edges = [
+            { id: 1, from: 1, to: 2, color: "#5a67d8", width: 3 },
+            { id: 2, from: 2, to: 3, color: "#38a169", width: 3 },
+            { id: 3, from: 3, to: 1, color: "#e53e3e", width: 3 }
+        ];
+        
+        state.nextNodeId = 4;
+        state.nextEdgeId = 4;
+        
+        // Update counters
+        function updateCounters() {
+            document.getElementById('nodeCount').textContent = state.nodes.length;
+            document.getElementById('edgeCount').textContent = state.edges.length;
+        }
+        
+        // Drawing functions
+        function drawNode(node, selected = false) {
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+            ctx.fillStyle = node.color;
+            ctx.fill();
+            
+            if (selected) {
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+            
+            // Draw node label
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.label, node.x, node.y);
+        }
+        
+        function drawEdge(edge) {
+            const fromNode = state.nodes.find(n => n.id === edge.from);
+            const toNode = state.nodes.find(n => n.id === edge.to);
+            
+            if (!fromNode || !toNode) return;
+            
+            // Calculate direction vector
+            const dx = toNode.x - fromNode.x;
+            const dy = toNode.y - fromNode.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const nx = dx / dist;
+            const ny = dy / dist;
+            
+            // Start and end points (accounting for node radius)
+            const startX = fromNode.x + nx * fromNode.size;
+            const startY = fromNode.y + ny * fromNode.size;
+            const endX = toNode.x - nx * toNode.size;
+            const endY = toNode.y - ny * toNode.size;
+            
+            // Draw the line
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = edge.color;
+            ctx.lineWidth = edge.width;
+            ctx.stroke();
+            
+            // Draw animated pulse if animation is running
+            if (state.animationId) {
+                const pulsePos = (state.animationTime * 0.005 * state.animationSpeed) % 1;
+                const pulseX = startX + (endX - startX) * pulsePos;
+                const pulseY = startY + (endY - startY) * pulsePos;
+                
+                ctx.beginPath();
+                ctx.arc(pulseX, pulseY, 8, 0, Math.PI * 2);
+                ctx.fillStyle = edge.color;
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(pulseX, pulseY, 4, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+            }
+            
+            // Draw edge label if it exists
+            if (edge.label) {
+                const midX = (startX + endX) / 2;
+                const midY = (startY + endY) / 2;
+                
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(edge.label, midX, midY);
+            }
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw edges first (so nodes appear on top)
+            state.edges.forEach(edge => drawEdge(edge));
+            
+            // Draw nodes
+            state.nodes.forEach(node => {
+                drawNode(node, node === state.selectedNode);
+            });
+            
+            updateCounters();
+        }
+        
+        // Tool selection
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.tool = btn.dataset.tool;
+            });
+        });
+        
+        // Color selection
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                state.color = option.dataset.color;
+            });
+        });
+        
+        // Node size slider
+        const nodeSizeSlider = document.getElementById('nodeSize');
+        const nodeSizeValue = document.getElementById('nodeSizeValue');
+        
+        nodeSizeSlider.addEventListener('input', () => {
+            state.nodeSize = parseInt(nodeSizeSlider.value);
+            nodeSizeValue.textContent = state.nodeSize;
+            
+            if (state.selectedNode) {
+                state.selectedNode.size = state.nodeSize;
+            }
+            draw();
+        });
+        
+        // Edge width slider
+        const edgeWidthSlider = document.getElementById('edgeWidth');
+        const edgeWidthValue = document.getElementById('edgeWidthValue');
+        
+        edgeWidthSlider.addEventListener('input', () => {
+            state.edgeWidth = parseInt(edgeWidthSlider.value);
+            edgeWidthValue.textContent = state.edgeWidth;
+            draw();
+        });
+        
+        // Animation speed slider
+        const animationSpeedSlider = document.getElementById('animationSpeed');
+        const speedValue = document.getElementById('speedValue');
+        
+        animationSpeedSlider.addEventListener('input', () => {
+            state.animationSpeed = parseFloat(animationSpeedSlider.value);
+            speedValue.textContent = state.animationSpeed.toFixed(1);
+        });
+        
+        // Canvas interaction
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (state.tool === 'select') {
+                // Check if clicked on a node
+                const clickedNode = state.nodes.find(node => {
+                    const dist = Math.sqrt((node.x - x) ** 2 + (node.y - y) ** 2);
+                    return dist <= node.size;
+                });
+                
+                if (clickedNode) {
+                    state.selectedNode = clickedNode;
+                    state.dragging = true;
+                } else {
+                    state.selectedNode = null;
+                }
+                draw();
+            } else if (state.tool === 'node') {
+                // Add new node
+                const newNode = {
+                    id: state.nextNodeId++,
+                    x: x,
+                    y: y,
+                    label: `Node ${state.nextNodeId - 1}`,
+                    color: state.color,
+                    size: state.nodeSize
+                };
+                state.nodes.push(newNode);
+                state.selectedNode = newNode;
+                draw();
+            } else if (state.tool === 'edge') {
+                // Find clicked node to start edge from
+                const clickedNode = state.nodes.find(node => {
+                    const dist = Math.sqrt((node.x - x) ** 2 + (node.y - y) ** 2);
+                    return dist <= node.size;
+                });
+                
+                if (clickedNode) {
+                    state.selectedNode = clickedNode;
+                    // On next click, create edge to that node
+                    const edgeHandler = (e2) => {
+                        const rect2 = canvas.getBoundingClientRect();
+                        const x2 = e2.clientX - rect2.left;
+                        const y2 = e2.clientY - rect2.top;
+                        
+                        const toNode = state.nodes.find(node => {
+                            const dist = Math.sqrt((node.x - x2) ** 2 + (node.y - y2) ** 2);
+                            return dist <= node.size;
+                        });
+                        
+                        if (toNode && toNode !== clickedNode) {
+                            const newEdge = {
+                                id: state.nextEdgeId++,
+                                from: clickedNode.id,
+                                to: toNode.id,
+                                color: state.color,
+                                width: state.edgeWidth,
+                                label: `Edge ${state.nextEdgeId - 1}`
+                            };
+                            state.edges.push(newEdge);
+                            draw();
+                        }
+                        
+                        canvas.removeEventListener('click', edgeHandler);
+                        state.selectedNode = null;
+                        state.tool = 'select';
+                        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelector('[data-tool="select"]').classList.add('active');
+                    };
+                    
+                    canvas.addEventListener('click', edgeHandler);
+                }
+            } else if (state.tool === 'text') {
+                const label = prompt('Enter text label:', 'New Label');
+                if (label) {
+                    // Find if clicked on a node or edge
+                    const clickedNode = state.nodes.find(node => {
+                        const dist = Math.sqrt((node.x - x) ** 2 + (node.y - y) ** 2);
+                        return dist <= node.size;
+                    });
+                    
+                    if (clickedNode) {
+                        clickedNode.label = label;
+                    } else {
+                        // Add as floating text (simplified - in real app you'd store text objects)
+                        alert('Click on a node to add a label, or use the node tool first.');
+                    }
+                    draw();
+                }
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (state.dragging && state.selectedNode) {
+                const rect = canvas.getBoundingClientRect();
+                state.selectedNode.x = e.clientX - rect.left;
+                state.selectedNode.y = e.clientY - rect.top;
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            state.dragging = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            state.dragging = false;
+        });
+        
+        // Animation controls
+        document.getElementById('playAnimation').addEventListener('click', () => {
+            if (state.animationId) {
+                cancelAnimationFrame(state.animationId);
+            }
+            
+            function animate() {
+                state.animationTime++;
+                draw();
+                state.animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        });
+        
+        document.getElementById('stopAnimation').addEventListener('click', () => {
+            if (state.animationId) {
+                cancelAnimationFrame(state.animationId);
+                state.animationId = null;
+                draw();
+            }
+        });
+        
+        document.getElementById('resetAnimation').addEventListener('click', () => {
+            state.animationTime = 0;
+            if (state.animationId) {
+                cancelAnimationFrame(state.animationId);
+                state.animationId = null;
+            }
+            draw();
+        });
+        
+        // Templates
+        document.querySelectorAll('.template-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const template = btn.dataset.template;
+                applyTemplate(template);
+            });
+        });
+        
+        function applyTemplate(template) {
+            // Clear current design
+            state.nodes = [];
+            state.edges = [];
+            state.nextNodeId = 1;
+            state.nextEdgeId = 1;
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.3;
+            
+            if (template === 'star') {
+                // Central node
+                state.nodes.push({
+                    id: state.nextNodeId++,
+                    x: centerX,
+                    y: centerY,
+                    label: "Hub",
+                    color: "#5a67d8",
+                    size: 35
+                });
+                
+                // Surrounding nodes
+                const nodeCount = 5;
+                for (let i = 0; i < nodeCount; i++) {
+                    const angle = (i * 2 * Math.PI) / nodeCount;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    state.nodes.push({
+                        id: state.nextNodeId++,
+                        x: x,
+                        y: y,
+                        label: `Node ${i + 1}`,
+                        color: "#38a169",
+                        size: 30
+                    });
+                    
+                    state.edges.push({
+                        id: state.nextEdgeId++,
+                        from: 1,
+                        to: state.nextNodeId - 1,
+                        color: "#5a67d8",
+                        width: 3,
+                        label: `Link ${i + 1}`
+                    });
+                }
+            } else if (template === 'mesh') {
+                // Create a mesh network
+                const nodeCount = 6;
+                const positions = [];
+                
+                for (let i = 0; i < nodeCount; i++) {
+                    const angle = (i * 2 * Math.PI) / nodeCount;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    positions.push({ x, y });
+                    
+                    state.nodes.push({
+                        id: state.nextNodeId++,
+                        x: x,
+                        y: y,
+                        label: `Node ${i + 1}`,
+                        color: i % 2 === 0 ? "#5a67d8" : "#e53e3e",
+                        size: 30
+                    });
+                }
+                
+                // Connect each node to every other node
+                for (let i = 0; i < nodeCount; i++) {
+                    for (let j = i + 1; j < nodeCount; j++) {
+                        state.edges.push({
+                            id: state.nextEdgeId++,
+                            from: i + 1,
+                            to: j + 1,
+                            color: "#805ad5",
+                            width: 2,
+                            label: `${i + 1}-${j + 1}`
+                        });
+                    }
+                }
+            } else if (template === 'hierarchy') {
+                // Create a hierarchical structure
+                const levels = 3;
+                const nodesPerLevel = [1, 3, 5];
+                let nodeId = 1;
+                
+                for (let level = 0; level < levels; level++) {
+                    const y = 100 + level * 120;
+                    const count = nodesPerLevel[level];
+                    
+                    for (let i = 0; i < count; i++) {
+                        const x = centerX - (count - 1) * 60 + i * 120;
+                        
+                        state.nodes.push({
+                            id: nodeId,
+                            x: x,
+                            y: y,
+                            label: `L${level + 1}.${i + 1}`,
+                            color: level === 0 ? "#5a67d8" : level === 1 ? "#38a169" : "#d69e2e",
+                            size: 30
+                        });
+                        
+                        // Connect to parent level
+                        if (level > 0) {
+                            const parentIndex = Math.floor(i / (count / nodesPerLevel[level - 1]));
+                            const parentId = nodeId - count - nodesPerLevel[level - 1] + parentIndex;
+                            
+                            if (parentId > 0) {
+                                state.edges.push({
+                                    id: state.nextEdgeId++,
+                                    from: parentId,
+                                    to: nodeId,
+                                    color: "#4a5568",
+                                    width: 2
+                                });
+                            }
+                        }
+                        
+                        nodeId++;
+                    }
+                }
+            } else if (template === 'flowchart') {
+                // Create a simple flowchart
+                const nodes = [
+                    { x: centerX, y: 100, label: "Start", color: "#38a169" },
+                    { x: centerX, y: 180, label: "Process", color: "#5a67d8" },
+                    { x: centerX - 120, y: 260, label: "Decision", color: "#d69e2e" },
+                    { x: centerX + 120, y: 260, label: "Decision", color: "#d69e2e" },
+                    { x: centerX - 120, y: 340, label: "Yes", color: "#e53e3e" },
+                    { x: centerX + 120, y: 340, label: "No", color: "#e53e3e" },
+                    { x: centerX, y: 420, label: "End", color: "#805ad5" }
+                ];
+                
+                nodes.forEach((nodeConfig, i) => {
+                    state.nodes.push({
+                        id: state.nextNodeId++,
+                        x: nodeConfig.x,
+                        y: nodeConfig.y,
+                        label: nodeConfig.label,
+                        color: nodeConfig.color,
+                        size: nodeConfig.label === "Decision" ? 35 : 30
+                    });
+                });
+                
+                // Add edges
+                const edges = [
+                    { from: 1, to: 2, label: "Begin" },
+                    { from: 2, to: 3, label: "Check" },
+                    { from: 2, to: 4, label: "Check" },
+                    { from: 3, to: 5, label: "True" },
+                    { from: 4, to: 6, label: "False" },
+                    { from: 5, to: 7, label: "Continue" },
+                    { from: 6, to: 7, label: "Continue" }
+                ];
+                
+                edges.forEach(edgeConfig => {
+                    state.edges.push({
+                        id: state.nextEdgeId++,
+                        from: edgeConfig.from,
+                        to: edgeConfig.to,
+                        color: "#4a5568",
+                        width: 3,
+                        label: edgeConfig.label
+                    });
+                });
+            }
+            
+            draw();
+        }
+        
+        // Export functions
+        document.getElementById('exportPNG').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'network-design.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+        
+        document.getElementById('exportJSON').addEventListener('click', () => {
+            const data = {
+                nodes: state.nodes,
+                edges: state.edges,
+                settings: {
+                    nodeSize: state.nodeSize,
+                    edgeWidth: state.edgeWidth,
+                    animationSpeed: state.animationSpeed
+                }
+            };
+            
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = 'network-design.json';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        });
+        
+        document.getElementById('clearCanvas').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear the canvas?')) {
+                state.nodes = [];
+                state.edges = [];
+                state.nextNodeId = 1;
+                state.nextEdgeId = 1;
+                state.selectedNode = null;
+                
+                if (state.animationId) {
+                    cancelAnimationFrame(state.animationId);
+                    state.animationId = null;
+                }
+                
+                draw();
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Delete selected node
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (state.selectedNode) {
+                    // Remove node
+                    state.nodes = state.nodes.filter(node => node !== state.selectedNode);
+                    
+                    // Remove connected edges
+                    state.edges = state.edges.filter(edge => 
+                        edge.from !== state.selectedNode.id && edge.to !== state.selectedNode.id
+                    );
+                    
+                    state.selectedNode = null;
+                    draw();
+                }
+            }
+            
+            // Copy selected node with Ctrl+C
+            if (e.ctrlKey && e.key === 'c' && state.selectedNode) {
+                const newNode = {
+                    id: state.nextNodeId++,
+                    x: state.selectedNode.x + 40,
+                    y: state.selectedNode.y + 40,
+                    label: `${state.selectedNode.label} Copy`,
+                    color: state.selectedNode.color,
+                    size: state.selectedNode.size
+                };
+                state.nodes.push(newNode);
+                state.selectedNode = newNode;
+                draw();
+            }
+        });
+        
+        // Initial draw
+        draw();
+        updateCounters();
+    </script>
+</body>
+</html>
